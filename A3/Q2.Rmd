@@ -1,0 +1,51 @@
+---
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+```{r}
+
+s2 = 4.9
+
+n = c(12, 8, 16)
+b = c(0, 11.3, 8.4, 10.2)
+XtXc = diag(c(0, 1/c(12, 8, 16)))
+
+library(Matrix)
+r = rankMatrix(XtXc)[1]
+
+
+```
+
+
+```{r}
+#a)
+tt = as.vector(c(0, 1, -1, 0))
+halfwidth = qt(0.975, df = sum(n)-r) * sqrt(s2 * t(tt) %*% XtXc %*% tt)
+
+(CI = tt %*% b + c(-1, 1) * halfwidth)
+```
+The 95% confidence interval for tildaA-tildaB = (0.844, 4.956)
+
+```{r}
+#b)
+C = matrix(c(0, 1, -1, 0, 0, 0, 1, -1), 2, 4, byrow = T)
+df1 = rankMatrix(C)[1]
+
+(Fstat = ((t(C %*% b) %*% solve(C %*% XtXc %*% t(C)) %*% C %*% b)/df1)/s2)
+
+df1
+(df2 = sum(n)-r)
+
+```
+The F-statistic = 4.122 on 2, 33 Degrees of Freedom.
+
+
+```{r}
+#c)
+tt = c(0, 0, -1, 1)
+tstat = ((t(tt) %*% b) - 2)/sqrt(s2 * t(tt) %*% (XtXc) %*% tt)
+pt(tstat, df = sum(n)-r, 0.05, lower = T)
+```
+As the P value is larger than 0.05, fail to reject H0 that T_C-T_B >= 2

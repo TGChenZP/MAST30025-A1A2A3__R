@@ -1,0 +1,70 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
+```{r}
+# setwd('desktop')
+df = read.csv('heli.csv')
+df$Treef = as.factor(df$Tree)
+```
+
+```{r}
+#a)
+plot(df$Load, df$Velocity, pch = array(df$Treef), col = df$Tree+1)
+```
+From the plot, there looks to be a strong positive linear relationship between Load and Velocity. However, heterosexuality may need to be monitored.
+
+
+```{r}
+#b)
+addModel = lm(Velocity ~ Load + Treef, data = df)
+intModel = lm(Velocity ~ Load * Treef, data = df)
+anova(addModel, intModel)
+```
+P-value of 0.05011 is very close to significance of 0.05. Should collect more data and retest. Otherwise, P-value < 0.1 is also commonly used for significance of interaction, and denotes 'somewhat significant'; so in this case the interaction model should be kept based on the result of this test.
+
+
+```{r}
+#c) 
+model = lm(Velocity~Load*Treef, data = df)
+drop1(model, scope = ~., test = "F")
+# puts "None" as top pick because the interaction term is < 0.1 - moderate significance; but Tree itself has p value > 0.05 so both should be removed
+
+model2 = lm(Velocity~Load, data = df)
+drop1(model2, scope = ~., test = "F")
+
+summary(model2)
+```
+The final model is Velocity = -0.09326 + 5.82019*Load
+
+
+```{r}
+#d)
+
+plot(df$Load, df$Velocity) 
+
+abline(coef = c(model2$coefficients[1], model2$coefficients[2]))
+
+```
+
+```{r}
+plot(df$Load, df$Velocity, pch = array(df$Treef), col = df$Tree+1)
+
+abline(coef = c(intModel$coefficients[1], intModel$coefficients[2]), col = 'red')
+
+abline(coef = c(intModel$coefficients[1]+intModel$coefficients[3], intModel$coefficients[2]+intModel$coefficients[5]), col = 'green')
+
+abline(coef = c(intModel$coefficients[1]+intModel$coefficients[4], intModel$coefficients[2]+intModel$coefficients[6]), col = 'blue')
+```
+
+
+```{r}
+#e)
+library(car)
+dst = matrix(c(1), 1, 1)
+C = matrix(c(1, 0.2, 1, 0, 0.2, 0), 1, 6, byrow = T)
+linearHypothesis(intModel, C, dst)
+
+```
+Since P value = 0.04219 < 0.05, there is sufficient evidence to reject the null hypothesis that Samara from tree 2 with disk loading of 0.2 has avg descent velocity of 1.
