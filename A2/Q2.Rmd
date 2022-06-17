@@ -1,0 +1,93 @@
+---
+title: "Question 2"
+output:
+  word_document: default
+  html_document: default
+---
+
+Setup
+```{r preamble} 
+sold = c(5.5, 5.9, 6.5, 5.9, 8.0, 9.0, 10.0, 10.8)
+cost = c(7.2, 10, 9, 5.5, 9, 9.8, 14.5, 8.0)
+unemp = c(8.7, 9.4, 10, 9, 12, 11, 12, 13.7)
+intRate = c(5.5, 4.4, 4, 7, 5, 6.2, 5.8, 3.9)
+
+data = data.frame(carsSold = sold, cost = cost, unempRate = unemp, intRate = intRate)
+
+```
+
+a)
+```{r a}
+x = cbind(rep(1, length(data)), data$cost, data$unempRate, data$intRate)
+y = data$carsSold
+n = dim(x)[1]
+p = dim(x)[2]
+(b = solve(t(x) %*% x, t(x) %*% y))
+
+e = y - x %*% b
+SSRes = sum(e^2)
+(s2 = SSRes/(n-p))
+
+```
+Therefore the estimated parameters for intercept, cost, unemployment rate and interest rate are -7.404, 0.121, 1.117, 0.0386 respectively.
+The estimated error variance is 0.396.
+
+
+b)
+```{r b}
+c = solve(t(x) %*% x)
+alpha = 0.05
+df = n-p
+ta = qt(1-alpha/2, df = df)
+
+(b0CI = b[1] + c(-1, 1) * ta * sqrt(s2*c[1,1]))
+(b1CI = b[2] + c(-1, 1) * ta * sqrt(s2*c[2,2]))
+(b2CI = b[3] + c(-1, 1) * ta * sqrt(s2*c[3,3]))
+(b3CI = b[4] + c(-1, 1) * ta * sqrt(s2*c[4,4]))
+
+```
+Therefore the 95% confidence intervals of the model parameters are
+Beta0: (-13.8196491, -0.9893101)
+Beta1: (-0.1525428,  0.3940720)
+Beta2: (0.6817719, 1.5531974)
+Beta3: (-0.2563181,  1.0285593)
+
+c)
+```{r c}
+xst = c(1, 12, 8, 3.5)
+(yst = t(xst) %*% b)
+
+yst[1] + c(-1, 1) * qt(0.975, df) * sqrt(s2) * sqrt(1 + (t(xst) %*% c %*% xst)[1])
+
+```
+This is not an atypical year because 7 (k) is still within the 95% prediction interval of (1.44, 7.23).
+
+
+d)
+```{r d}
+n <- dim(x)[1]
+c_ = matrix(c(c[3,3], c[3,4], c[4,3], c[4,4]), c(2,2))
+
+b0 <- seq(b2CI[1]-0.25, b2CI[2]+0.25,length=100)
+b1 <- seq(b3CI[1]-0.25, b3CI[2]+0.25,length=100)
+f <- function(beta0, beta1) {
+  f.out <- rep(0, length(beta0))
+  for (i in 1:length(beta0)) {
+    beta <- matrix(c(beta0[i], beta1[i]), 2, 1)
+    f.out[i] <- t(matrix(c(b[3], b[4]), 2, 1) - beta) %*% solve(c_) %*% (matrix(c(b[3], b[4]), 2, 1) - beta)
+  }
+  return(f.out)
+}
+z <- outer(b0, b1, f)
+contour(b0, b1, z, levels=2*s2*qf(0.95, 2, n-p),
+xlab='beta_unemp_rate', ylab='beta_interest_rate')
+
+rect(b2CI[1], b3CI[1], b2CI[2], b3CI[2])
+
+
+```
+
+e)
+I
+I would expect the joint confidence region to be larger than the rectangle as the rectangle assumes that all parameters are independent whereas in reality they are correlated with each other. Correlation expands the area of the confidence region because the variables moves with each other, so a lot of the originally assumed unlikely (outside 95%) values for one parameter now becomes likely under the influence of the boundaries of the other parameter. This should in theory make the 'gains' of the joint confidence regions larger than the 'losses' compared to the joint independent confidence intervals.
+

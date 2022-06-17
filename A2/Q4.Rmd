@@ -1,0 +1,94 @@
+---
+title: "Question 4"
+output:
+  word_document: default
+  html_document: default
+---
+
+Setup
+```{r get directory right}
+#setwd('Desktop/1. University/1. Undergraduate/17. Linear Statistical Models/assignments/assignment 2')
+```
+
+```{r setup}
+file = read.csv('bike.csv')
+```
+
+a)
+```{r a}
+model = lm(count~temp + hum + wind + visi + dew + solar, data = file)
+model$coefficients
+```
+So the full model is 
+
+count = 1247.61 - 14.6576 * temp - 13.072 * hum - 21.49 * wind - 0.02 * visi + 33.656 * dew + 141.2317 * solar
+
+b)
+```{r b}
+summary(model)
+```
+The p-value is <2.2e^-16, meaning that the model is relevant when tested against the corrected sum of squares (which is what R uses by default).
+
+c)
+```{r c}
+basemodel = lm(count~1, data = file)
+add1(basemodel, scope = ~ . + temp + hum + wind + visi + dew + solar, test = "F")
+```
+
+```{r}
+model1 = lm(count~solar, data = file)
+add1(model1, scope = ~ . + temp + hum + wind + visi + dew, test = "F")
+```
+
+```{r}
+model2 = lm(count~temp+solar, data = file)
+add1(model2, scope = ~ . + hum + wind + visi + dew, test = "F")
+```
+
+```{r}
+model3 = lm(count~temp+solar+hum, data = file)
+add1(model3, scope = ~ . + wind + visi + dew, test = "F")
+```
+
+
+```{r}
+model4 = lm(count~temp+solar+hum+dew, data = file)
+add1(model4, scope = ~ . + wind + visi, test = "F")
+```
+Thus, the variables selected for the model using Forward Selection (F test) is temp, solar, hum and dew.
+
+d)
+```{r d}
+basemodel = lm(count ~ 1, data = file)
+step(basemodel, scope = ~ . + temp + hum + wind + visi + dew + solar)
+```
+The variables included are solar, hum and dew. Of which, solar's coefficient is 132.713 (positive effect on count), humidity coefficient is -8.641 (negative) and dew's coefficient is 18.453 (positive). The intercept term is 803.994.
+The absolute value of all 3 coefficients and the intercept have reduced in this final model compared to the full model. Particularly for dew, which reduced from 33.65 to 18.45, this could be because of the removal of temp, which from the pairs plot below can be seen to have a high positive correlation with dew. This is supported by the fact that in the full model temp has a coefficient of -14.6576, which is approximately the difference between 33.65 and 18.45. 
+The other variables do not show such significant pattern.
+
+
+```{r}
+pairs(file)
+```
+
+```{r}
+finalModel = lm(count ~ solar + hum + dew, data = file)
+```
+
+e)
+```{r e}
+library(car)
+dst = c(0)
+c = matrix(c(0, 1, 0, 0, 0, -1, 0), c(1, 7))
+linearHypothesis(model, c, dst)
+```
+The General Linear Hypothesis for this test returned a p value of 0.07288 > 0.05 which means there is not enough evidence to reject the null hypothesis that temp and dew have the same effect on the number of bikes rented.
+
+
+```{r, f}
+plot(finalModel)
+```
+The residual vs fitted values plot show an initially increasing but later decreasing trend. However this doesn't seem to be a big problem. However, instances 173, 308 and 161 seem to have a very large residual and thus their removal should be considered.
+The QQ plot of standardised residuals has a problem in the lower values whereby the standardised residuals deviate from Normal Distribution (heavy left tail). Once again instances 161 and 308 seems to be causing the greatest problem.
+The Sqrt of abs(standardised residuals) suggests a problem as there seems to be an increasing trend in the sqrt of abs(standardised residuals) as fitted values increase.
+The Standardised residuals vs leverage plot looks fine as none of the points exceed 0.5 in terms of cook's distance. However there seems to be an initial decreasing trend in the residuals which whilst is not overly significant should be monitored and assessed.
